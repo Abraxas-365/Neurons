@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { QRCodeSVG } from "qrcode.react"
 import { formatDistanceToNow } from "date-fns"
-import { ArrowLeft, Gift, Loader2, QrCode, RefreshCw } from "lucide-react"
+import { ArrowLeft, Gift, Loader2, Lock, QrCode, RefreshCw } from "lucide-react"
 import { useAuth } from "@/auth/context"
 import {
   useMyBenefits,
@@ -155,6 +155,28 @@ export function MyWalletPage() {
           ) : (
             <div className="space-y-3">
               {benefits.map((b) => {
+                if (b.locked) {
+                  return (
+                    <Card key={b.id} className="opacity-60">
+                      <CardContent>
+                        <div className="flex items-start gap-3">
+                          <span className="text-2xl grayscale">{b.icon ?? "🎁"}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium">{b.name}</div>
+                            {b.description && (
+                              <p className="text-xs text-muted-foreground">{b.description}</p>
+                            )}
+                          </div>
+                          <Badge variant="secondary">
+                            <Lock className="size-3" />
+                            Locked
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                }
+
                 const cost = b.cost
                 const pct = cost ? Math.min(100, (me.balance / cost) * 100) : 100
                 const affordable = cost == null || me.balance >= cost

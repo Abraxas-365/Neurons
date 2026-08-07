@@ -329,6 +329,7 @@ export interface StudentBenefit {
   available: boolean
   /** False when the student cannot currently afford it (RN-04). */
   affordable: boolean
+  locked: boolean
   available_until: string | null
 }
 

@@ -96,8 +96,8 @@ func (s *BenefitService) List(
 	return s.repo.ListByClassroom(ctx, classroomID, activeOnly)
 }
 
-// ListForStudent returns the catalog as the student sees it (HU-061): only
-// active benefits, annotated with availability and affordability.
+// ListForStudent returns the catalog as the student sees it (HU-061): all
+// benefits, annotated with availability, affordability, and lock state.
 func (s *BenefitService) ListForStudent(
 	ctx context.Context,
 	classroomID kernel.ClassroomID,
@@ -108,7 +108,7 @@ func (s *BenefitService) ListForStudent(
 		return nil, err
 	}
 
-	items, err := s.repo.ListByClassroom(ctx, classroomID, true)
+	items, err := s.repo.ListByClassroom(ctx, classroomID, false)
 	if err != nil {
 		return nil, err
 	}

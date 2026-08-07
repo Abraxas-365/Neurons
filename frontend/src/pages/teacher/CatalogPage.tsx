@@ -328,7 +328,7 @@ function BenefitsTab({ classroomId }: { classroomId: string }) {
                   {b.max_uses_per_student != null && (
                     <Badge variant="outline">Max {b.max_uses_per_student}/student</Badge>
                   )}
-                  {!b.is_active && <Badge variant="secondary">Hidden</Badge>}
+                  {!b.is_active && <Badge variant="secondary">Locked</Badge>}
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -383,9 +383,9 @@ function BenefitDialog({
 }) {
   const create = useCreateBenefit(classroomId)
   const update = useUpdateBenefit(classroomId)
-  const [freeAmount, setFreeAmount] = useState(false)
-  const [approval, setApproval] = useState(false)
-  const [active, setActive] = useState(true)
+  const [freeAmount, setFreeAmount] = useState(benefit?.cost == null)
+  const [approval, setApproval] = useState(benefit?.requires_approval ?? false)
+  const [active, setActive] = useState(benefit?.is_active ?? true)
 
   const key = benefit?.id ?? "new"
 
@@ -495,7 +495,7 @@ function BenefitDialog({
             </div>
 
             <div className="flex items-center justify-between rounded-lg border p-3">
-              <Label htmlFor="b-active">Visible to students</Label>
+              <Label htmlFor="b-active">Available to students</Label>
               <Switch id="b-active" checked={active} onCheckedChange={setActive} />
             </div>
           </div>

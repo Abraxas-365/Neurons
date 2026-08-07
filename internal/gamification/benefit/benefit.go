@@ -118,25 +118,34 @@ type StudentView struct {
 	RemainingUses    *int             `json:"remaining_uses"`
 	Available        bool             `json:"available"`
 	Affordable       bool             `json:"affordable"`
+	Locked           bool             `json:"locked"`
 	AvailableUntil   *time.Time       `json:"available_until"`
 }
 
 func (b *Benefit) ToStudentView(balance int64, now time.Time) StudentView {
+	locked := !b.IsActive
 	affordable := true
 	if b.Cost != nil {
 		affordable = balance >= int64(*b.Cost)
 	}
+
+	var cost *int
+	if !locked {
+		cost = b.Cost
+	}
+
 	return StudentView{
 		ID:               b.ID,
 		Name:             b.Name,
 		Description:      b.Description,
 		Icon:             b.Icon,
-		Cost:             b.Cost,
+		Cost:             cost,
 		RequiresApproval: b.RequiresApproval,
 		Conditions:       b.Conditions,
 		RemainingUses:    b.RemainingUses(),
 		Available:        b.IsAvailableAt(now),
 		Affordable:       affordable,
+		Locked:           locked,
 		AvailableUntil:   b.AvailableUntil,
 	}
 }
