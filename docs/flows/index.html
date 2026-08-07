@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEURONS — Verified flows</title>
+<style>
+  :root {
+    --bg: #fafaff;
+    --surface: #ffffff;
+    --border: #e6e6f0;
+    --ink: #16161d;
+    --muted: #6b6b80;
+    --primary: #5b3df5;
+    --primary-soft: #efecfe;
+    --grant: #16a34a;
+    --grant-soft: #e8f7ee;
+    --redeem: #d97706;
+    --redeem-soft: #fdf1e0;
+    --reverse: #dc2626;
+    --reverse-soft: #fdeaea;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px 96px; }
+
+  header.hero {
+    padding: 72px 0 40px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .logo {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-weight: 700; letter-spacing: .14em; font-size: 13px;
+    color: var(--primary); text-transform: uppercase;
+  }
+  .logo .dot {
+    width: 22px; height: 22px; border-radius: 7px; background: var(--primary);
+    display: inline-block; position: relative;
+  }
+  .logo .dot::after {
+    content: ""; position: absolute; inset: 6px; border-radius: 50%;
+    border: 2px solid #fff;
+  }
+  h1 { font-size: 40px; line-height: 1.15; margin: 20px 0 12px; letter-spacing: -.02em; }
+  .lede { font-size: 18px; color: var(--muted); max-width: 62ch; margin: 0; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px;
+  }
+  .pill {
+    font-size: 12.5px; padding: 5px 11px; border-radius: 999px;
+    background: var(--primary-soft); color: var(--primary); font-weight: 600;
+  }
+  .pill.plain { background: #f0f0f6; color: var(--muted); }
+
+  nav.toc {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 24px; margin-bottom: 48px;
+  }
+  nav.toc h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 0 0 12px; }
+  nav.toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 40px; }
+  nav.toc li { margin-bottom: 6px; break-inside: avoid; }
+  nav.toc a { color: var(--ink); text-decoration: none; }
+  nav.toc a:hover { color: var(--primary); text-decoration: underline; }
+
+  section.flow { margin-bottom: 72px; scroll-margin-top: 24px; }
+  .flow-head { border-left: 3px solid var(--primary); padding-left: 18px; margin-bottom: 8px; }
+  .flow-kicker { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--primary); }
+  h2 { font-size: 27px; margin: 6px 0 10px; letter-spacing: -.015em; }
+  .flow-head p { margin: 0; color: var(--muted); max-width: 68ch; }
+
+  .rules { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 28px 21px; }
+  .rule {
+    font-size: 12.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    padding: 4px 9px; border-radius: 6px; background: #f0f0f6; color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .step {
+    display: grid; grid-template-columns: 34px 1fr; gap: 18px;
+    margin-bottom: 34px;
+  }
+  .step-n {
+    width: 34px; height: 34px; border-radius: 50%; background: var(--primary);
+    color: #fff; font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step h3 { margin: 4px 0 6px; font-size: 18px; }
+  .step p { margin: 0 0 14px; color: var(--muted); }
+  figure {
+    margin: 0; border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; background: var(--surface);
+  }
+  figure img { display: block; width: 100%; height: auto; }
+  figcaption {
+    font-size: 13px; color: var(--muted); padding: 10px 14px;
+    border-top: 1px solid var(--border); background: #fbfbfe;
+  }
+  figure.narrow { max-width: 420px; }
+
+  .proof {
+    margin-top: 14px; border-radius: var(--radius); padding: 12px 16px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px;
+    background: var(--grant-soft); border: 1px solid #c8ead6; color: #14532d;
+  }
+  .proof.redeem { background: var(--redeem-soft); border-color: #f3ddba; color: #7c3d05; }
+  .proof.block { background: var(--reverse-soft); border-color: #f5cfcf; color: #7f1d1d; }
+  .proof b { font-weight: 700; }
+
+  .note {
+    border-left: 3px solid var(--primary); background: var(--primary-soft);
+    padding: 14px 18px; border-radius: 0 var(--radius) var(--radius) 0;
+    margin: 22px 0 0 21px; font-size: 15px;
+  }
+  .note strong { color: var(--primary); }
+
+  table.findings { width: 100%; border-collapse: collapse; font-size: 15px; }
+  table.findings th, table.findings td {
+    text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  table.findings th { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  table.findings code { font-size: 13px; background: #f0f0f6; padding: 2px 5px; border-radius: 4px; }
+  .tag { font-size: 11.5px; font-weight: 700; padding: 3px 8px; border-radius: 5px; white-space: nowrap; }
+  .tag.fixed { background: var(--grant-soft); color: #14532d; }
+  .tag.ok { background: var(--primary-soft); color: var(--primary); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 760px) {
+    .grid2 { grid-template-columns: 1fr; }
+    nav.toc ol { columns: 1; }
+    h1 { font-size: 30px; }
+  }
+  footer {
+    border-top: 1px solid var(--border); padding-top: 24px;
+    color: var(--muted); font-size: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <span class="logo"><span class="dot"></span> Neurons</span>
+  <h1>Verified end-to-end flows</h1>
+  <p class="lede">
+    Every screen below was driven through a real browser against the running API and
+    Postgres. Balances quoted under each step were read back from the database after
+    the click, so the screenshots and the numbers agree.
+  </p>
+  <div class="meta">
+    <span class="pill">Flow A · QR grant</span>
+    <span class="pill">Flow B · Team grant</span>
+    <span class="pill">Flow C · Redemption</span>
+    <span class="pill">Flow D · Manual grant</span>
+    <span class="pill plain">Course: Cálculo I · A · 2026-1</span>
+    <span class="pill plain">6 students · 2 teams · 38 movements</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#signin">Sign in</a></li>
+    <li><a href="#dashboard">Course dashboard</a></li>
+    <li><a href="#flow-d">Flow D — Manual grant</a></li>
+    <li><a href="#flow-b">Flow B — Team grant</a></li>
+    <li><a href="#flow-a">Flow A — QR grant</a></li>
+    <li><a href="#flow-c">Flow C — Redemption</a></li>
+    <li><a href="#ledger">Ledger &amp; reversals</a></li>
+    <li><a href="#setup">Roster, teams, catalog, medals</a></li>
+    <li><a href="#student">The student's side</a></li>
+    <li><a href="#findings">What the walkthrough found</a></li>
+  </ol>
+</nav>
+
+<!-- ================= SIGN IN ================= -->
+<section class="flow" id="signin">
+  <div class="flow-head">
+    <div class="flow-kicker">Entry</div>
+    <h2>Sign in</h2>
+    <p>
+      Passwordless. The teacher types an email, receives a six-digit code, and lands
+      on their course list. There is no password to leak in a classroom full of
+      people looking at the projector.
+    </p>
+  </div>
+
+  <div class="step">
+    <div class="step-n">1</div>
+    <div>
+      <h3>Ask for a code</h3>
+      <p>One field. The screen never claims more than it needs.</p>
+      <figure>
+        <img src="shots/00-login.png" alt="Sign in screen with a single email field">
+        <figcaption>Email step — the only decision is which address.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-n">2</div>
+    <div>
+      <h3>Enter the code</h3>
+      <p>The field auto-advances at six digits, so the common case needs no extra tap.</p>
+      <figure>
+        <img src="shots/01-otp.png" alt="One-time code entry screen">
+        <figcaption>Code step, with escape hatches for a wrong address or a lost email.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-n">3</div>
+    <div>
+      <h3>Land on the courses</h3>
+      <p>
+        Each course carries its own vault. RN-01 makes neurons non-transferable
+        between courses, and the layout says so by never showing a combined total.
+      </p>
+      <figure>
+        <img src="shots/02-courses.png" alt="Course list showing Cálculo I with its vault balance">
+        <figcaption>Vault 2,950 held by the classroom; 50 already in students' hands.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DASHBOARD ================= -->
+<section class="flow" id="dashboard">
+  <div class="flow-head">
+    <div class="flow-kicker">Overview</div>
+    <h2>Course dashboard</h2>
+    <p>
+      What the teacher wants between classes: where the neurons went, who is engaged,
+      and which reasons are actually being used.
+    </p>
+  </div>
+
+  <div class="step">
+    <div class="step-n">—</div>
+    <div>
+      <figure>
+        <img src="shots/03-dashboard.png" alt="Dashboard with stats, leaderboard, reason chart and activity feed">
+        <figcaption>
+          Vault and circulation up top, leaderboard with medal counts, reason usage as a
+          bar chart, and the raw activity feed underneath.
+        </figcaption>
+      </figure>
+      <div class="note">
+        <strong>Why the reason chart matters.</strong> RN-10 forces a reason on every grant.
+        That constraint turns into free analytics: the chart is the honest answer to
+        “what am I actually rewarding?”, which is usually different from what a teacher
+        thinks they reward.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FLOW D ================= -->
+<section class="flow" id="flow-d">
+  <div class="flow-head">
+    <div class="flow-kicker">Flow D</div>
+    <h2>Manual grant — the mid-class path</h2>
+    <p>
+      This is the screen that gets used while thirty people wait. Pick recipients,
+      tap a reason, confirm. Everything is one tap; nothing is a dropdown.
+    </p>
+  </div>
+  <div class="rules">
+    <span class="rule">RN-05 no vault overdraft</span>
+    <span class="rule">RN-08 positive amounts</span>
+    <span class="rule">RN-10 reason required</span>
+    <span class="rule">§11.9 large-amount reconfirm</span>
+  </div>
+
+  <div class="step">
+    <div class="step-n">1</div>
+    <div>
+      <h3>Select students and a reason</h3>
+      <p>
+        Two students picked. Tapping <em>Tarea excelente</em> set the amount to its
+        suggested 3 — the reason carries the amount so the teacher makes one decision,
+        not two. The running total shows 6 because each recipient gets the full 3.
+      </p>
+      <figure>
+        <img src="shots/10-grant-selected.png" alt="Grant screen with two students and a reason selected">
+        <figcaption>Amount presets, a separated free-entry box, and reason chips showing their suggested amounts.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-n">2</div>
+    <div>
+      <h3>Grant</h3>
+      <p>Balances and the vault update in place; the sidebar total moves without a reload.</p>
+      <figure>
+        <img src="shots/11-grant-done.png" alt="Grant screen after a successful grant, with balances updated">
+        <figcaption>Confirmation toast, and both selected students now at their new balance.</figcaption>
+      </figure>
+      <div class="proof">
+        Verified in Postgres → recipients <b>10 → 13</b> each · vault <b>2,949 → 2,943</b> (6 debited, not 3)
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-n">3</div>
+    <div>
+      <h3>A large amount asks twice</h3>
+      <p>
+        §11.9. A slipped digit is the most likely real-world error, and it is the one
+        error a ledger cannot silently absorb — so the amount is restated in words
+        before anything is written.
+      </p>
+      <figure>
+        <img src="shots/12-confirm-dialog.png" alt="Confirmation dialog for a large grant">
+        <figcaption>“You are about to give 75 neurons to 1 recipient.” Escape is the default.</figcaption>
+      </figure>
+      <div class="proof block">
+        API returns <b>409 LEDGER_CONFIRMATION_REQUIRED</b> until the request repeats with <code>confirmed: true</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FLOW B ================= -->
+<section class="flow" id="flow-b">
+  <div class="flow-head">
+    <div class="flow-kicker">Flow B</div>
+    <h2>Team grant — the amount is not divided</h2>
+    <p>
+      The single most misread rule in the spec, so the screen states it in a full
+      sentence rather than trusting an icon.
+    </p>
+  </div>
+  <div class="rules">
+    <span class="rule">RN-07 every member receives the full amount</span>
+    <span class="rule">RN-05 vault covers the sum</span>
+  </div>
+
+  <div class="step">
+    <div class="step-n">1</div>
+    <div>
+      <h3>Pick a team</h3>
+      <p>
+        “Each of the 3 members receives 2 — the amount is not divided.” The total to
+        give reads 6, which is what actually leaves the vault.
+      </p>
+      <figure>
+        <img src="shots/20-team-grant.png" alt="Team grant tab with a team selected and the non-division notice">
+        <figcaption>The rule is written where the mistake would be made.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-n">2</div>
+    <div>
+      <h3>Grant to the team</h3>
+      <figure>
+        <img src="shots/21-team-grant-done.png" alt="Team grant completed">
+        <figcaption>One action, three ledger entries — the ledger records people, not teams.</figcaption>
+      </figure>
+      <div class="proof">
+        Verified → Diego <b>3 → 5</b>, María <b>13 → 15</b>, Valeria <b>6 → 8</b> · vault <b>2,943 → 2,937</b> (3 × 2)
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FLOW A ================= -->
+<section class="flow" id="flow-a">
+  <div class="flow-head">
+    <div class="flow-kicker">Flow A</div>
+    <h2>QR grant — student presents, teacher scans</h2>
+    <p>
+      The student's phone mints a short-lived code; the teacher's device resolves it
+      to an enrollment and grants. Two devices, one transaction, paid exactly once.
+    </p>
+  </div>
+  <div class="rules">
+    <span class="rule">RN-12 token bound to its classroom</span>
+    <span class="rule">RN-13 short-lived, single-use</span>
+    <span class="rule">§11.2 token entropy</span>
+    <span class="rule">§11.3 idempotent confirm</span>
+  </div>
+
+  <div class="step">
+    <div class="step-n">1</div>
+    <div>
+      <h3>The student shows a code</h3>
+      <p>
+        Minted on demand, 60-second TTL held in Redis, and the countdown is visible so
+        nobody wonders whether a stale screenshot still works. It does not.
+      </p>
+      <figure class="narrow">
+        <img src="shots/54-student-qr.png" alt="Student phone showing a QR code with a 60 second expiry">
+        <figcaption>Single-use code with a live countdown, on a phone-sized viewport.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-n">2</div>
+    <div>
+      <h3>The teacher scans — or types</h3>
+      <p>
+        Camera first, manual entry always available. A lecture hall with no camera
+        permission still has to work.
+      </p>
+      <figure>
+        <img src="shots/60-scan.png" alt="Scan screen with the code typed in manually">
+        <figcaption>Camera unavailable here, so the viewfinder collapses and manual entry takes the space.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-n">3</div>
+    <div>
+      <h3>The code resolves to a person</h3>
+      <p>
+        Name, team and current balance appear before any amount is chosen — the teacher
+        confirms they are paying the right student, not the right string.
+      </p>
+      <figure>
+        <img src="shots/61-scan-resolved.png" alt="Scanned student resolved to Sofía Paredes with amount and reason controls">
+        <figcaption>Resolved to Sofía Paredes · Los Derivados · balance 13.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-n">4</div>
+    <div>
+      <h3>Grant</h3>
+      <figure>
+        <img src="shots/62-scan-granted.png" alt="Confirmation that the scanned grant succeeded">
+        <figcaption>Full-bleed confirmation, readable at arm's length across a desk.</figcaption>
+      </figure>
+      <div class="proof">
+        Verified → Sofía <b>13 → 15</b> · vault <b>2,952 → 2,950</b> · channel recorded as <b>QR scan</b>
+      </div>
+      <div class="note">
+        <strong>Paid once, even on a double tap.</strong> The scan hands back a
+        <code>grant_key</code> derived from the token, and the grant that follows sends it as its
+        idempotency key. Replaying the same scan+grant pair was verified to move the
+        balance on the first call and no-op on the second (§11.3).
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FLOW C ================= -->
+<section class="flow" id="flow-c">
+  <div class="flow-head">
+    <div class="flow-kicker">Flow C</div>
+    <h2>Redemption — neurons go back to the vault</h2>
+    <p>
+      The student spends what they earned on something the course actually offers.
+      Nothing is destroyed; the neurons return to the classroom vault.
+    </p>
+  </div>
+  <div class="rules">
+    <span class="rule">RN-04 balance never goes negative</span>
+    <span class="rule">RN-11 concept required</span>
+    <span class="rule">RN-09 atomic and auditable</span>
+  </div>
+
+  <div class="step">
+    <div class="step-n">1</div>
+    <div>
+      <h3>Pick a student and a benefit</h3>
+      <p>
+        The arithmetic is shown before the commit: current balance, what is being
+        returned, what is left. Benefits the student cannot afford are disabled rather
+        than allowed-then-rejected — RN-04 is enforced in the UI and again in the
+        database.
+      </p>
+      <figure>
+        <img src="shots/40-redeem-selected.png" alt="Redeem screen with a student and benefit selected showing the balance math">
+        <figcaption>15 − 15 = 0. The 20-neuron benefit above it is greyed out at this balance.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-n">2</div>
+    <div>
+      <h3>Confirm</h3>
+      <figure>
+        <img src="shots/41-redeem-done.png" alt="Redemption completed">
+        <figcaption>Redemption written; the vault grows by exactly what the student returned.</figcaption>
+      </figure>
+      <div class="proof redeem">
+        Verified → María <b>15 → 0</b>, total returned <b>15</b> · vault <b>2,937 → 2,952</b>
+      </div>
+      <div class="proof block">
+        RN-04 confirmed at the API: three 20-neuron redemptions from a balance of 25 →
+        <b>201</b>, then <b>409 LEDGER_INSUFFICIENT_BALANCE</b> twice, balance frozen at 5
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= LEDGER ================= -->
+<section class="flow" id="ledger">
+  <div class="flow-head">
+    <div class="flow-kicker">Audit</div>
+    <h2>Ledger &amp; reversals</h2>
+    <p>
+      Append-only. A mistake is corrected by writing its opposite, never by deleting
+      the original — which is the only way a student can trust the number.
+    </p>
+  </div>
+  <div class="rules">
+    <span class="rule">RN-09 atomic + auditable</span>
+    <span class="rule">RN-15 reversals are new rows</span>
+  </div>
+
+  <div class="step">
+    <div class="step-n">1</div>
+    <div>
+      <h3>Every movement, in order</h3>
+      <p>
+        Who, why, how much, through which channel, and the balance that resulted.
+        The QR grant from Flow A sits at the top with its channel recorded.
+      </p>
+      <figure>
+        <img src="shots/34-ledger.png" alt="Ledger table listing every transaction with running balances">
+        <figcaption>38 movements across the course, with a running balance-after on each row.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-n">2</div>
+    <div>
+      <h3>Reversing says what it does</h3>
+      <p>
+        “This does not erase anything. A new opposite entry is written, and both stay
+        visible in the ledger.” The dialog refuses to imply a delete, because the
+        system cannot do one.
+      </p>
+      <figure>
+        <img src="shots/35-reverse-dialog.png" alt="Reversal confirmation dialog explaining that nothing is erased">
+        <figcaption>RN-15 stated in the words a teacher will actually read.</figcaption>
+      </figure>
+      <div class="proof block">
+        Verified at the API → reversing a spent grant is refused with
+        <b>409 INSUFFICIENT_BALANCE</b>; a second reversal of the same entry returns
+        <b>409 LEDGER_ALREADY_REVERSED</b>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SETUP ================= -->
+<section class="flow" id="setup">
+  <div class="flow-head">
+    <div class="flow-kicker">Setup</div>
+    <h2>Roster, teams, catalog, medals</h2>
+    <p>The screens a teacher touches once a term rather than once a class.</p>
+  </div>
+
+  <div class="grid2">
+    <figure>
+      <img src="shots/30-students.png" alt="Student roster with balances and totals received">
+      <figcaption><b>Students</b> — balance and lifetime received side by side, so a low balance reads as “spent it”, not “never earned”.</figcaption>
+    </figure>
+    <figure>
+      <img src="shots/31-teams.png" alt="Teams page with two teams and their members">
+      <figcaption><b>Teams</b> — membership and per-member balances, with a randomizer for forming groups on the spot.</figcaption>
+    </figure>
+    <figure>
+      <img src="shots/32-catalog.png" alt="Catalog of reasons and benefits">
+      <figcaption><b>Catalog</b> — reasons carry suggested amounts, benefits carry costs. This is what makes the grant screen one tap.</figcaption>
+    </figure>
+    <figure>
+      <img src="shots/33-medals.png" alt="Medals page with medal definitions and recent awards">
+      <figcaption><b>Medals</b> — recognition that costs no neurons. A team medal appears on every member's profile (RN-14).</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ================= STUDENT ================= -->
+<section class="flow" id="student">
+  <div class="flow-head">
+    <div class="flow-kicker">Student</div>
+    <h2>The student's side</h2>
+    <p>
+      Phone-shaped, because that is the only device a student will open it on.
+      Read-mostly: see the balance, see why, present a code.
+    </p>
+  </div>
+  <div class="rules">
+    <span class="rule">RN-01 one balance per course</span>
+    <span class="rule">RN-14 team medals on member profiles</span>
+    <span class="rule">RN-17 closed courses freeze movement</span>
+  </div>
+
+  <div class="grid2">
+    <figure class="narrow">
+      <img src="shots/50-student-courses.png" alt="Student course list showing one course with its balance">
+      <figcaption><b>Courses</b> — one card per course, each with its own separate balance. No combined total is ever shown.</figcaption>
+    </figure>
+    <figure class="narrow">
+      <img src="shots/51-student-wallet.png" alt="Student wallet showing balance, team and activity history">
+      <figcaption><b>Wallet</b> — balance, team, and the reason behind every movement. “+3 Tarea excelente” is the whole point of RN-10.</figcaption>
+    </figure>
+    <figure class="narrow">
+      <img src="shots/52-student-benefits.png" alt="Student view of available benefits with costs">
+      <figcaption><b>Benefits</b> — what the balance is actually worth, priced in the same units they hold.</figcaption>
+    </figure>
+    <figure class="narrow">
+      <img src="shots/53-student-medals.png" alt="Student medals including a team medal">
+      <figcaption><b>Medals</b> — including the team medal earned by Los Derivados, shown on the member's own profile.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ================= FINDINGS ================= -->
+<section class="flow" id="findings">
+  <div class="flow-head">
+    <div class="flow-kicker">Result</div>
+    <h2>What the walkthrough found</h2>
+    <p>
+      Driving the real thing surfaced four defects that neither the type checker nor
+      the API tests could have caught. All four are fixed and re-verified above.
+    </p>
+  </div>
+
+  <table class="findings">
+    <thead>
+      <tr><th>Finding</th><th>Cause</th><th>Resolution</th><th></th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Scan page rendered blank</td>
+        <td><code>qr.stop()</code> throws synchronously when the camera never started, taking the page down on unmount</td>
+        <td>Teardown is guarded by a <code>started</code> flag</td>
+        <td><span class="tag fixed">fixed</span></td>
+      </tr>
+      <tr>
+        <td>Typed QR codes never resolved</td>
+        <td>The input upper-cased its value, but codes are case-sensitive base64url</td>
+        <td>Input passes text through untouched</td>
+        <td><span class="tag fixed">fixed</span></td>
+      </tr>
+      <tr>
+        <td>Wallet showed “Course closed” on an active course</td>
+        <td><code>/me/classrooms/:id/enrollment</code> returned no classroom name or status</td>
+        <td><code>MyEnrollment</code> now joins the classroom and returns both</td>
+        <td><span class="tag fixed">fixed</span></td>
+      </tr>
+      <tr>
+        <td>Camera panel pushed manual entry off-screen</td>
+        <td>The viewfinder held a full square even with no camera to show</td>
+        <td>Collapses to a short notice when unavailable</td>
+        <td><span class="tag fixed">fixed</span></td>
+      </tr>
+      <tr>
+        <td>Reason chips showed no suggested amount</td>
+        <td>Seed data wrote <code>default_amount</code>; the field is <code>suggested_amount</code></td>
+        <td>Seed corrected — the UI was already right</td>
+        <td><span class="tag ok">data</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>Rules exercised against the live system.</strong>
+    RN-01 course isolation · RN-04 no negative balance · RN-05 no vault overdraft ·
+    RN-07 team grants pay each member in full · RN-09 atomic, auditable movements ·
+    RN-10 reason required · RN-11 concept required · RN-12 tokens bound to a classroom ·
+    RN-13 short-lived single-use tokens · RN-14 team medals on member profiles ·
+    RN-15 reversals as new entries · RN-17 closed courses frozen ·
+    §11.3 idempotent confirmation · §11.9 large-amount reconfirmation.
+  </div>
+</section>
+
+<footer>
+  Captured with Chrome DevTools against the running stack — API on :8080, web on :5175,
+  Postgres and Redis in Docker. Every balance quoted was read back from the database
+  after the interaction shown.
+</footer>
+
+</div>
+</body>
+</html>

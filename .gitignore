@@ -1,0 +1,16 @@
+.env
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+bin/
+vendor/
+tmp/
+.idea/
+.vscode/
+coverage.out
+coverage.html
+uploads/
+backups/
