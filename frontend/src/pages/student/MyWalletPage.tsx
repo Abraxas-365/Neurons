@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom"
 import { QRCodeSVG } from "qrcode.react"
 import { formatDistanceToNow } from "date-fns"
 import { ArrowLeft, Gift, Loader2, QrCode, RefreshCw } from "lucide-react"
+import { useAuth } from "@/auth/context"
 import {
   useMyBenefits,
   useMyEnrollment,
@@ -29,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export function MyWalletPage() {
   const { classroomId = "" } = useParams()
+  const { user } = useAuth()
   const { data: me, isLoading } = useMyEnrollment(classroomId)
   const { data: history } = useMyHistory(classroomId, { page_size: 30 })
   const { data: medals } = useMyMedals(classroomId)
@@ -225,7 +227,14 @@ export function MyWalletPage() {
         </TabsContent>
       </Tabs>
 
-      <MyQRDialog classroomId={classroomId} open={qrOpen} onOpenChange={setQrOpen} />
+      <MyQRDialog
+        classroomId={classroomId}
+        studentName={user?.name ?? ""}
+        teamName={me.team_name}
+        classroomName={me.classroom_name}
+        open={qrOpen}
+        onOpenChange={setQrOpen}
+      />
     </div>
   )
 }
@@ -237,10 +246,16 @@ export function MyWalletPage() {
  */
 function MyQRDialog({
   classroomId,
+  studentName,
+  teamName,
+  classroomName,
   open,
   onOpenChange,
 }: {
   classroomId: string
+  studentName: string
+  teamName: string | null
+  classroomName: string
   open: boolean
   onOpenChange: (v: boolean) => void
 }) {
@@ -257,6 +272,14 @@ function MyQRDialog({
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-4 py-4">
+          <div className="text-center">
+            <p className="text-lg font-semibold">{studentName}</p>
+            <p className="text-sm text-muted-foreground">{classroomName}</p>
+            {teamName && (
+              <Badge variant="secondary" className="mt-1">{teamName}</Badge>
+            )}
+          </div>
+
           <div className="rounded-2xl bg-white p-4">
             {token ? (
               <QRCodeSVG value={token.code} size={220} level="M" />
