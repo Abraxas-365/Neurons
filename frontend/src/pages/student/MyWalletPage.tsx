@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { QRCodeSVG } from "qrcode.react"
 import { formatDistanceToNow } from "date-fns"
-import { ArrowLeft, Gift, Loader2, Lock, QrCode, RefreshCw } from "lucide-react"
+import { ArrowLeft, Check, Copy, Gift, Loader2, Lock, QrCode, RefreshCw, Share2 } from "lucide-react"
 import { useAuth } from "@/auth/context"
 import {
   useMyBenefits,
@@ -320,16 +320,53 @@ function MyQRDialog({
             </>
           )}
 
-          <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
-            {isFetching ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <RefreshCw className="size-4" />
-            )}
-            New code
-          </Button>
+          <div className="flex gap-2">
+            <ShareCodeButton code={token?.code} />
+            <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+              {isFetching ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <RefreshCw className="size-4" />
+              )}
+              New code
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function ShareCodeButton({ code }: { code: string | undefined }) {
+  const [copied, setCopied] = useState(false)
+
+  async function handleShare() {
+    if (!code) return
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: code })
+        return
+      } catch {
+        // User cancelled or share failed — fall through to clipboard
+      }
+    }
+
+    await navigator.clipboard.writeText(code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <Button variant="outline" onClick={handleShare} disabled={!code}>
+      {copied ? (
+        <Check className="size-4" />
+      ) : navigator.share ? (
+        <Share2 className="size-4" />
+      ) : (
+        <Copy className="size-4" />
+      )}
+      {copied ? "Copied!" : "Share"}
+    </Button>
   )
 }
