@@ -361,7 +361,7 @@ function ShareCodeButton({ code }: { code: string | undefined }) {
     <Button variant="outline" onClick={handleShare} disabled={!code}>
       {copied ? (
         <Check className="size-4" />
-      ) : navigator.share ? (
+      ) : typeof navigator.share === "function" ? (
         <Share2 className="size-4" />
       ) : (
         <Copy className="size-4" />
