@@ -122,6 +122,11 @@ test-race: ## Run tests with race detector
 	@echo "🧪 Running tests with race detector..."
 	go test -race -v ./...
 
+.PHONY: test-e2e
+test-e2e: ## Run the end-to-end HTTP suite against throwaway testcontainers (no `make up` needed)
+	@echo "🧪 Running e2e tests (testcontainers postgres + redis)..."
+	go test -v ./cmd/...
+
 .PHONY: lint
 lint: ## Run linter
 	@echo "🔍 Running linter..."
