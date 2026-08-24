@@ -39,6 +39,7 @@ import type {
   TenantOption,
   TokenResponse,
   Transaction,
+  UserDetails,
   UpdateBenefitInput,
   UpdateClassroomInput,
   UpdateMedalInput,
@@ -83,6 +84,16 @@ export const authApi = {
   /** Trades the refresh token for a new access token (OAuth handler group). */
   refresh: (refresh_token: string) =>
     http.post<TokenResponse>("/auth/refresh", { refresh_token }),
+
+  /** Kicks off Google OAuth: backend replies with the URL to redirect to. */
+  googleLogin: () =>
+    http
+      .post<{ auth_url: string; state: string }>("/auth/login", { provider: "google" })
+      .then((r) => r.auth_url),
+
+  /** Resolves the current session from the access token (set after OAuth callback). */
+  me: () =>
+    http.get<{ user: UserDetails; tenant: { id: string; company_name: string } }>("/auth/me"),
 }
 
 // ---------------------------------------------------------------------------

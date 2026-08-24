@@ -1,8 +1,6 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { useAuth } from "@/auth/context"
 import { authApi } from "@/lib/api/endpoints"
 import { ApiError } from "@/lib/api/client"
 import { NeuronIcon } from "@/components/neuron-amount"
@@ -14,93 +12,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-
-type Step = "email" | "tenant" | "code"
-
-interface TenantOption {
-  tenant_id: string
-  company_name: string
-}
 
 /**
- * Passwordless OTP login. The backend deliberately does not reveal whether an
- * email exists, so the UI always advances to the code step and lets the
- * verification fail — never leak account existence here.
+ * Accounts are provisioned out-of-band (an admin creates the user/invitation
+ * directly), so the only self-serve action here is starting the Google OAuth
+ * dance. The backend redirects back to /auth/callback with tokens once done.
  */
 export function LoginPage() {
-  const navigate = useNavigate()
-  const { login } = useAuth()
-
-  const [step, setStep] = useState<Step>("email")
-  const [email, setEmail] = useState("")
-  const [code, setCode] = useState("")
-  const [tenants, setTenants] = useState<TenantOption[]>([])
-  const [tenantId, setTenantId] = useState("")
   const [busy, setBusy] = useState(false)
 
-  async function submitEmail(e: React.FormEvent) {
-    e.preventDefault()
+  async function signInWithGoogle() {
     setBusy(true)
     try {
-      const list = await authApi.tenants(email)
-
-      if (list.length === 0) {
-        toast.error("No organization found for that email.")
-        return
-      }
-
-      setTenants(list)
-
-      if (list.length === 1) {
-        setTenantId(list[0].tenant_id)
-        await sendCode(list[0].tenant_id)
-      } else {
-        setStep("tenant")
-      }
+      const authUrl = await authApi.googleLogin()
+      window.location.assign(authUrl)
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Could not reach the server.")
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function sendCode(tid: string) {
-    const res = await authApi.initiateLogin(email, tid)
-    toast.success(res.message)
-    setStep("code")
-  }
-
-  async function submitTenant(e: React.FormEvent) {
-    e.preventDefault()
-    if (!tenantId) return
-    setBusy(true)
-    try {
-      await sendCode(tenantId)
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "Could not send the code.")
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function submitCode(e: React.FormEvent) {
-    e.preventDefault()
-    setBusy(true)
-    try {
-      await login(email, code, tenantId)
-      navigate("/", { replace: true })
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "Invalid or expired code.")
-    } finally {
       setBusy(false)
     }
   }
@@ -122,121 +49,51 @@ export function LoginPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>
-              {step === "email" && "Sign in"}
-              {step === "tenant" && "Choose your organization"}
-              {step === "code" && "Enter your code"}
-            </CardTitle>
-            <CardDescription>
-              {step === "email" && "We'll email you a one-time code."}
-              {step === "tenant" && "This email belongs to more than one organization."}
-              {step === "code" && `Sent to ${email}`}
-            </CardDescription>
+            <CardTitle>Sign in</CardTitle>
+            <CardDescription>Use your Google account to continue.</CardDescription>
           </CardHeader>
 
           <CardContent>
-            {step === "email" && (
-              <form onSubmit={submitEmail} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    autoFocus
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@university.edu"
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={busy}>
-                  {busy && <Loader2 className="size-4 animate-spin" />}
-                  Continue
-                </Button>
-              </form>
-            )}
-
-            {step === "tenant" && (
-              <form onSubmit={submitTenant} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Organization</Label>
-                  <Select value={tenantId} onValueChange={setTenantId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select one" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tenants.map((t) => (
-                        <SelectItem key={t.tenant_id} value={t.tenant_id}>
-                          {t.company_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button type="submit" className="w-full" disabled={busy || !tenantId}>
-                  {busy && <Loader2 className="size-4 animate-spin" />}
-                  Send code
-                </Button>
-              </form>
-            )}
-
-            {step === "code" && (
-              <form onSubmit={submitCode} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="code">6-digit code</Label>
-                  <Input
-                    id="code"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    autoFocus
-                    required
-                    maxLength={6}
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                    className="text-center text-2xl tracking-[0.4em] tabular"
-                    placeholder="······"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={busy || code.length < 4}
-                >
-                  {busy && <Loader2 className="size-4 animate-spin" />}
-                  Sign in
-                </Button>
-                <div className="flex justify-between text-xs">
-                  <button
-                    type="button"
-                    className="text-muted-foreground hover:text-foreground"
-                    onClick={() => {
-                      setStep("email")
-                      setCode("")
-                    }}
-                  >
-                    Use another email
-                  </button>
-                  <button
-                    type="button"
-                    className="text-primary hover:underline"
-                    onClick={async () => {
-                      try {
-                        await authApi.resendOtp(email, tenantId, "login")
-                        toast.success("New code sent.")
-                      } catch {
-                        toast.error("Could not resend the code.")
-                      }
-                    }}
-                  >
-                    Resend
-                  </button>
-                </div>
-              </form>
-            )}
+            <Button
+              type="button"
+              className="w-full"
+              variant="outline"
+              disabled={busy}
+              onClick={signInWithGoogle}
+            >
+              {busy ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <GoogleIcon className="size-4" />
+              )}
+              Continue with Google
+            </Button>
           </CardContent>
         </Card>
       </div>
     </div>
+  )
+}
+
+function GoogleIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.48a5.54 5.54 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.56-5.17 3.56-8.82Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.96-1.07 7.95-2.91l-3.88-3c-1.08.72-2.46 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.26v3.09A11.998 11.998 0 0 0 12 24Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.27 14.28A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.28V6.63H1.26A11.998 11.998 0 0 0 0 12c0 1.94.46 3.77 1.26 5.37l4.01-3.09Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.77c1.76 0 3.34.6 4.59 1.79l3.44-3.44C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.69 1.26 6.63l4.01 3.09C6.22 6.88 8.87 4.77 12 4.77Z"
+      />
+    </svg>
   )
 }

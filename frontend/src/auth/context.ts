@@ -14,6 +14,8 @@ export interface AuthState {
   role: Role
   hasScope: (scope: string) => boolean
   login: (email: string, code: string, tenantId: string) => Promise<void>
+  /** Used by the OAuth callback page: tokens already exist, just adopt them. */
+  loginWithTokens: (accessToken: string, refreshToken: string) => Promise<void>
   logout: () => void
 }
 

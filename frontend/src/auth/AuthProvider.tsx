@@ -68,6 +68,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setScopes(scopesFromToken(res.access_token))
   }, [])
 
+  const loginWithTokens = useCallback(async (accessToken: string, refreshToken: string) => {
+    tokenStore.set(accessToken, refreshToken)
+    const res = await authApi.me()
+    localStorage.setItem(USER_KEY, JSON.stringify(res.user))
+    setUser(res.user)
+    setScopes(scopesFromToken(accessToken))
+  }, [])
+
   const value = useMemo(() => {
     const hasScope = (scope: string) => matchScope(scopes, scope)
     const role: Role = hasScope("neurons:grant") ? "teacher" : "student"
@@ -78,9 +86,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role,
       hasScope,
       login,
+      loginWithTokens,
       logout,
     }
-  }, [user, scopes, login, logout])
+  }, [user, scopes, login, loginWithTokens, logout])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

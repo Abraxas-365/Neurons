@@ -7,6 +7,7 @@ import { useAuth } from "@/auth/context"
 import { ClassroomLayout } from "@/layouts/ClassroomLayout"
 import { StudentLayout } from "@/layouts/StudentLayout"
 import { LoginPage } from "@/pages/LoginPage"
+import { OAuthCallbackPage } from "@/pages/OAuthCallbackPage"
 import { CoursesPage } from "@/pages/teacher/CoursesPage"
 import { GrantPage } from "@/pages/teacher/GrantPage"
 import { StudentsPage } from "@/pages/teacher/StudentsPage"
@@ -35,6 +36,7 @@ export default function App() {
       <TooltipProvider delayDuration={200}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/auth/callback" element={<OAuthCallbackPage />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
         <Toaster position="top-center" richColors />

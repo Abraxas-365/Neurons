@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -286,15 +288,6 @@ func (ah *AuthHandlers) HandleCallback(c *fiber.Ctx) error {
 	// Audit: successful OAuth login
 	ah.auditService.LogLoginAttempt(c.Context(), userEntity.ID, tenantEntity.ID, "oauth_"+strings.ToLower(string(provider)), true, c.IP(), c.Get("User-Agent"))
 
-	response := TokenResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshTokenStr,
-		TokenType:    "Bearer",
-		ExpiresIn:    int(ah.config.Auth.JWT.AccessTokenTTL / time.Second),
-		User:         userEntity.ToDTO(),
-		Tenant:       tenantEntity.ToDTO(),
-	}
-
 	// Set cookies for browser-based apps
 	c.Cookie(&fiber.Cookie{
 		Name:     ah.config.Auth.Cookie.AccessTokenName,
@@ -318,7 +311,17 @@ func (ah *AuthHandlers) HandleCallback(c *fiber.Ctx) error {
 		Path:     ah.config.Auth.Cookie.Path,
 	})
 
-	return c.JSON(response)
+	// Hand the tokens to the SPA via a redirect: the app lives behind the
+	// same origin as this API (see BASE_URL), and localStorage.tokenStore
+	// (not cookies) is what the axios client actually reads on every
+	// request, so the callback page must capture these from the URL.
+	redirectURL := fmt.Sprintf(
+		"%s/auth/callback?access_token=%s&refresh_token=%s",
+		strings.TrimRight(ah.config.Server.BaseURL, "/"),
+		url.QueryEscape(accessToken),
+		url.QueryEscape(refreshTokenStr),
+	)
+	return c.Redirect(redirectURL, fiber.StatusFound)
 }
 
 // RefreshToken renews an access token using a refresh token
@@ -606,7 +609,34 @@ func (ah *AuthHandlers) findOrCreateUser(ctx context.Context, userInfo *OAuthUse
 			return nil, nil, tenant.ErrTenantNotFound()
 		}
 	} else {
-		return nil, nil, errx.New("invitation required for registration", errx.TypeAuthorization)
+		// No invitation: this can still be a returning user signing in with
+		// Google directly (accounts are provisioned out-of-band by an admin,
+		// not through self-serve signup). Look the email up across tenants;
+		// brand-new accounts still require an invitation to pick a tenant.
+		existingUsers, findErr := ah.userRepo.FindByEmailAcrossTenants(ctx, userInfo.Email)
+		if findErr != nil || len(existingUsers) == 0 {
+			return nil, nil, errx.New("invitation required for registration", errx.TypeAuthorization)
+		}
+		if len(existingUsers) > 1 {
+			return nil, nil, errx.New("multiple accounts found for this email; use an invitation link", errx.TypeBusiness)
+		}
+
+		existingUser := existingUsers[0]
+		tenantEntity, err = ah.tenantRepo.FindByID(ctx, existingUser.TenantID)
+		if err != nil {
+			return nil, nil, tenant.ErrTenantNotFound()
+		}
+
+		if existingUser.OAuthProvider != provider || existingUser.OAuthProviderID != userInfo.ID {
+			existingUser.LinkOAuth(provider, userInfo.ID)
+			existingUser.UpdateProfile(userInfo.Name, userInfo.Picture)
+			ah.auditService.LogAccountLinked(ctx, existingUser.ID, tenantEntity.ID, "oauth_"+strings.ToLower(string(provider)), ip)
+			if err := ah.userRepo.Save(ctx, *existingUser); err != nil {
+				return nil, nil, err
+			}
+		}
+
+		return existingUser, tenantEntity, nil
 	}
 
 	// Account linking: look up existing user
